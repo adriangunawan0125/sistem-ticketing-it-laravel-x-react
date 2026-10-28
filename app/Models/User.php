@@ -14,6 +14,19 @@ use Illuminate\Notifications\Notifiable;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
+
+    protected $fillable = [
+    'name',
+    'email',
+    'password',
+    'role',
+    'is_active',
+                ];
+
+    protected $hidden = [
+    'password',
+    'remember_token',
+        ];
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
@@ -29,4 +42,8 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function tickets()
+{
+    return $this->hasMany(\App\Models\Ticket::class);
+}
 }

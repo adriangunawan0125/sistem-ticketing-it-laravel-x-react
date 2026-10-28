@@ -9,13 +9,18 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('ticket_replies', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
-    }
+   
+public function up(): void
+{
+    Schema::create('ticket_replies', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
+        $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+        $table->text('message');
+        $table->timestamps();
+    });
+}
+
 
     /**
      * Reverse the migrations.

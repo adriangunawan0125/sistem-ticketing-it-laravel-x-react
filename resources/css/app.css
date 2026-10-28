@@ -433,3 +433,354 @@ a { text-decoration: none; color: inherit; }
     .search-field { width: 100%; }
     .breadcrumb { font-size: 10px; }
 }
+
+
+.auth-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    min-height: 100vh;
+    background: #fff;
+}
+
+.auth-brand-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 42px 9%;
+    color: #fff;
+    background: #151b2b;
+}
+
+.auth-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 21px;
+    font-weight: 700;
+}
+
+.auth-logo {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    background: #3157ce;
+    border-radius: 10px;
+}
+
+.auth-brand-content {
+    max-width: 440px;
+    margin: 60px 0;
+}
+
+.auth-eyebrow {
+    color: #6478bd;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.3px;
+}
+
+.auth-brand-panel .auth-eyebrow {
+    color: #9cb4ff;
+}
+
+.auth-brand-content h1 {
+    margin: 22px 0 16px;
+    font-size: clamp(32px, 4vw, 48px);
+    line-height: 1.18;
+    letter-spacing: -1.8px;
+}
+
+.auth-brand-content p {
+    max-width: 390px;
+    color: #b7c1d3;
+    font-size: 14px;
+    line-height: 1.9;
+}
+
+.auth-copyright {
+    color: #8995aa;
+    font-size: 11px;
+}
+
+.auth-form-panel {
+    display: grid;
+    place-items: center;
+    padding: 36px 24px;
+}
+
+.auth-form-container {
+    width: 100%;
+    max-width: 390px;
+}
+
+.auth-form-container h2 {
+    margin: 14px 0 9px;
+    color: #182230;
+    font-size: 29px;
+    letter-spacing: -1px;
+}
+
+.auth-description {
+    margin: 0 0 29px;
+    color: #7b8495;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 19px;
+}
+
+.form-field label {
+    color: #344054;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.form-field input {
+    width: 100%;
+    height: 44px;
+    padding: 0 13px;
+    color: #344054;
+    background: #fff;
+    border: 1px solid #dfe4eb;
+    border-radius: 7px;
+    outline: none;
+    font-size: 12px;
+}
+
+.form-field input:focus {
+    border-color: #6481e8;
+    box-shadow: 0 0 0 3px #3157ce14;
+}
+
+.form-field input::placeholder {
+    color: #a0a8b6;
+}
+
+.auth-submit {
+    width: 100%;
+    height: 44px;
+    margin-top: 5px;
+    color: #fff;
+    background: #3157ce;
+    border: 0;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.auth-submit:hover {
+    background: #2648b2;
+}
+
+.auth-submit:disabled {
+    opacity: .65;
+    cursor: wait;
+}
+
+.auth-switch {
+    margin-top: 25px;
+    color: #7b8495;
+    text-align: center;
+    font-size: 12px;
+}
+
+.auth-switch a {
+    color: #3157ce;
+    font-weight: 600;
+}
+
+.auth-error, .field-error {
+    color: #b42318;
+    font-size: 12px;
+}
+
+.auth-error {
+    padding: 12px;
+    margin-bottom: 18px;
+    background: #fef3f2;
+    border: 1px solid #fecdca;
+    border-radius: 7px;
+}
+
+@media (max-width: 760px) {
+    .auth-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-brand-panel {
+        min-height: 230px;
+        padding: 24px;
+    }
+
+    .auth-brand-content {
+        margin: 35px 0 15px;
+    }
+
+    .auth-brand-content h1 {
+        font-size: 29px;
+    }
+
+    .auth-brand-content p,
+    .auth-copyright {
+        display: none;
+    }
+
+    .auth-form-panel {
+        padding: 40px 24px;
+    }
+
+}
+
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.48);
+    backdrop-filter: blur(3px);
+}
+
+.ticket-modal {
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px;
+    border: 1px solid #e8ebf0;
+    border-radius: 13px;
+    background: #fff;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+}
+
+.modal-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.modal-heading h2 {
+    margin: 10px 0 8px;
+    color: #182230;
+    font-size: 23px;
+    letter-spacing: -0.7px;
+}
+
+.modal-heading p {
+    margin: 0;
+    color: #7b8495;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.modal-close {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: 1px solid #e4e7ec;
+    border-radius: 7px;
+    background: #fff;
+    color: #667085;
+    font-size: 22px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.ticket-modal .form-field {
+    margin-bottom: 19px;
+}
+
+.ticket-modal .form-field input,
+.ticket-modal .form-field select,
+.ticket-modal .form-field textarea {
+    width: 100%;
+    padding: 12px;
+    color: #344054;
+    background: #fff;
+    border: 1px solid #dfe4eb;
+    border-radius: 7px;
+    outline: none;
+    font-size: 12px;
+}
+
+.ticket-modal .form-field input,
+.ticket-modal .form-field select {
+    height: 43px;
+}
+
+.ticket-modal .form-field textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.7;
+}
+
+.ticket-modal .form-field input:focus,
+.ticket-modal .form-field select:focus,
+.ticket-modal .form-field textarea:focus {
+    border-color: #6481e8;
+    box-shadow: 0 0 0 3px #3157ce12;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 17px;
+    border-top: 1px solid #edf0f4;
+}
+
+.modal-actions button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+@media (max-width: 520px) {
+    .ticket-modal {
+        padding: 20px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .modal-actions button {
+        flex: 1;
+    }
+    
+.sidebar-footer form {
+    margin-left: auto;
+}
+
+.logout-button {
+    padding: 7px 9px;
+    color: #c5ccda;
+    background: transparent;
+    border: 1px solid #3b4558;
+    border-radius: 6px;
+    font-size: 11px;
+}
+
+.logout-button:hover {
+    color: #fff;
+    background: #30394b;
+}
+
+}
+
