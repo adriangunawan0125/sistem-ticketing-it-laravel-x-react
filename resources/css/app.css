@@ -764,6 +764,15 @@ a { text-decoration: none; color: inherit; }
         flex: 1;
     }
     
+
+
+.logout-button:hover {
+    color: #fff;
+    background: #30394b;
+}
+
+}
+
 .sidebar-footer form {
     margin-left: auto;
 }
@@ -777,10 +786,117 @@ a { text-decoration: none; color: inherit; }
     font-size: 11px;
 }
 
-.logout-button:hover {
-    color: #fff;
-    background: #30394b;
+
+/* ========================================
+   TICKET TABLE: FILTER DAN DETAIL
+======================================== */
+
+.filter-button-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 37px;
+    padding: 0 11px;
+    color: #667085;
+    background: #fff;
+    border: 1px solid #dfe4eb;
+    border-radius: 7px;
 }
 
+.filter-button-wrapper:focus-within {
+    border-color: #8097ed;
+    box-shadow: 0 0 0 3px #3157ce12;
 }
+
+.filter-select {
+    min-width: 130px;
+    max-width: 220px;
+    padding: 0;
+    color: #475467;
+    background: transparent;
+    border: 0;
+    outline: none;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    appearance: none;
+}
+
+.filter-button-wrapper > svg {
+    order: 2;
+    pointer-events: none;
+}
+
+.filter-select option {
+    color: #344054;
+    background: #fff;
+}
+
+.ticket-description {
+    margin: 8px 0 18px;
+    color: #667085;
+    font-size: 12px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.ticket-detail-content {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    color: #475467;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.ticket-detail-content > p {
+    margin: 0 0 8px;
+}
+
+.ticket-detail-content strong {
+    color: #344054;
+    font-weight: 600;
+}
+
+/* Status tambahan */
+
+.status-menunggu_respons_user {
+    color: #6941c6;
+    background: #f4f3ff;
+    border-color: #e9d7fe;
+}
+
+.status-ditutup {
+    color: #475467;
+    background: #f2f4f7;
+    border-color: #e4e7ec;
+}
+
+/* Prioritas kritis */
+
+.priority-kritis {
+    color: #912018;
+    background: #fee4e2;
+}
+
+.priority-kritis > span {
+    background: #d92d20;
+}
+
+/* Responsif */
+
+@media (max-width: 520px) {
+    .filter-button-wrapper {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .filter-select {
+        flex: 1;
+        max-width: none;
+    }
+}
+
 

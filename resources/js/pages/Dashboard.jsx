@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTickets } from '../hooks/useTickets';
 import TicketCreateModal from '../components/tickets/TicketCreateModal';
@@ -6,51 +7,56 @@ import Sidebar from '../components/layout/Sidebar';
 import Topbar from '../components/layout/Topbar';
 import StatsGrid from '../components/dashboard/StatsGrid';
 import {
-    Ticket, Plus, Clock3, CircleCheck, CircleAlert
+    Ticket,
+    Plus,
+    Clock3,
+    CircleCheck,
+    CircleAlert,
 } from 'lucide-react';
 
 export default function Dashboard() {
-   const {
-    tickets,
-    statistics,
-    loading,
-    error,
-    createTicket,
-} = useTickets();
+    const {
+        tickets,
+        statistics,
+        loading,
+        error,
+        createTicket,
+    } = useTickets();
 
-const [showCreateForm, setShowCreateForm] = React.useState(false);
-const currentUser = window.currentUser;
-const isClient = currentUser?.role === 'client';
+    const [showCreateForm, setShowCreateForm] = React.useState(false);
+
+    const currentUser = window.currentUser;
+    const isClient = currentUser?.role === 'client';
+    const isITSupport = currentUser?.role === 'it_support';
 
     const stats = [
         {
             label: 'Total Tiket',
             value: statistics.total,
-            note: 'Seluruh laporan',
+            note: isClient ? 'Seluruh laporan saya' : 'Seluruh laporan klien',
             icon: Ticket,
         },
         {
             label: 'Menunggu',
             value: statistics.menunggu,
-            note: 'Perlu ditinjau',
+            note: 'Menunggu penanganan',
             icon: Clock3,
         },
         {
-            label: 'Sedang Diproses',
+            label: 'Diproses',
             value: statistics.diproses,
-            note: 'Dalam penanganan',
+            note: 'Sedang ditangani',
             icon: CircleAlert,
         },
         {
             label: 'Selesai',
             value: statistics.selesai,
-            note: 'Berhasil diselesaikan',
+            note: 'Laporan terselesaikan',
             icon: CircleCheck,
         },
     ];
 
     return (
-
         <div className="app-shell">
             <Sidebar currentUser={currentUser} />
 
@@ -60,23 +66,40 @@ const isClient = currentUser?.role === 'client';
                 <div className="page-content">
                     <section className="page-heading">
                         <div>
-                            <span className="eyebrow">OVERVIEW</span>
-                            <h1>Dashboard</h1>
-                            <p>Pantau dan kelola seluruh laporan IT Support.</p>
+                            <span className="eyebrow">
+                                {isITSupport ? 'IT SUPPORT WORKSPACE' : 'AREA KLIEN'}
+                            </span>
+
+                            <h1>
+                                {isITSupport ? 'Dashboard IT Support' : 'Dashboard Saya'}
+                            </h1>
+
+                            <p>
+                                {isITSupport
+                                    ? 'Pantau dan kelola laporan kendala IT dari seluruh klien.'
+                                    : 'Buat laporan kendala IT dan pantau progres penanganannya.'}
+                            </p>
                         </div>
-                      {isClient && (
-    <button
-        className="primary-button"
-        onClick={() => setShowCreateForm(true)}
-    >
-        <Plus size={17} /> Buat Tiket
-    </button>
-)}
+
+                        {isClient && (
+                            <button
+                                type="button"
+                                className="primary-button"
+                                onClick={() => setShowCreateForm(true)}
+                            >
+                                <Plus size={17} />
+                                Buat Tiket
+                            </button>
+                        )}
                     </section>
 
                     <StatsGrid stats={stats} />
 
-                    <TicketTable tickets={tickets} loading={loading} error={error} />
+                    <TicketTable
+                        tickets={tickets}
+                        loading={loading}
+                        error={error}
+                    />
 
                     <footer className="page-footer">
                         <span>Helpdesk Ticketing System</span>
@@ -84,6 +107,7 @@ const isClient = currentUser?.role === 'client';
                     </footer>
                 </div>
             </main>
+
             {isClient && showCreateForm && (
                 <TicketCreateModal
                     onClose={() => setShowCreateForm(false)}
