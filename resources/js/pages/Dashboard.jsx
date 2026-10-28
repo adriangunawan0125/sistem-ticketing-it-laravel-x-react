@@ -21,13 +21,13 @@ export default function Dashboard() {
         loading,
         error,
         createTicket,
+        updateStatus,
     } = useTickets();
 
     const [showCreateForm, setShowCreateForm] = React.useState(false);
 
     const currentUser = window.currentUser;
     const isClient = currentUser?.role === 'client';
-    const isITSupport = currentUser?.role === 'it_support';
 
     const stats = [
         {
@@ -67,17 +67,21 @@ export default function Dashboard() {
                     <section className="page-heading">
                         <div>
                             <span className="eyebrow">
-                                {isITSupport ? 'IT SUPPORT WORKSPACE' : 'AREA KLIEN'}
+                                {isClient
+                                    ? 'AREA KLIEN'
+                                    : 'IT SUPPORT WORKSPACE'}
                             </span>
 
                             <h1>
-                                {isITSupport ? 'Dashboard IT Support' : 'Dashboard Saya'}
+                                {isClient
+                                    ? 'Dashboard Saya'
+                                    : 'Dashboard IT Support'}
                             </h1>
 
                             <p>
-                                {isITSupport
-                                    ? 'Pantau dan kelola laporan kendala IT dari seluruh klien.'
-                                    : 'Buat laporan kendala IT dan pantau progres penanganannya.'}
+                                {isClient
+                                    ? 'Buat laporan kendala IT dan pantau progres penanganannya.'
+                                    : 'Pantau dan kelola laporan kendala IT dari seluruh klien.'}
                             </p>
                         </div>
 
@@ -99,6 +103,7 @@ export default function Dashboard() {
                         tickets={tickets}
                         loading={loading}
                         error={error}
+                        onUpdateStatus={updateStatus}
                     />
 
                     <footer className="page-footer">

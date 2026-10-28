@@ -25,17 +25,17 @@ export default function Sidebar({ currentUser }) {
             ? [
                 {
                     label: 'Semua Tiket',
-                    href: '/it-support/dashboard',
+                    href: '/it-support/tickets',
                     icon: Ticket,
                 },
                 {
                     label: 'Data Klien',
-                    href: '#data-klien',
+                    href: '/it-support/clients',
                     icon: Users,
                 },
-                {
+               {
                     label: 'Laporan',
-                    href: '#laporan',
+                    href: '/it-support/reports',
                     icon: ChartNoAxesColumn,
                 },
             ]
@@ -68,21 +68,24 @@ export default function Sidebar({ currentUser }) {
             <div className="nav-section">
                 <span className="nav-heading">MENU UTAMA</span>
 
-                {menuItems.map((item, index) => {
-                    const Icon = item.icon;
-                    const active = index === 0;
+              
+            {menuItems.map((item) => {
+                const Icon = item.icon;
+                const currentPath = window.location.pathname;
+                const active = currentPath === item.href;
 
-                    return (
-                        <a
-                            key={item.label}
-                            className={`nav-link${active ? ' active' : ''}`}
-                            href={item.href}
-                        >
-                            <Icon size={18} />
-                            {item.label}
-                        </a>
-                    );
-                })}
+                return (
+                    <a
+                        key={item.label}
+                        className={`nav-link${active ? ' active' : ''}`}
+                        href={item.href}
+                    >
+                        <Icon size={18} />
+                        {item.label}
+                    </a>
+                );
+            })}
+
             </div>
 
             {isITSupport && (
