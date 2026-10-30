@@ -9,7 +9,74 @@ import {
     Headset,
 } from 'lucide-react';
 
-export default function Sidebar({ currentUser }) {
+import { confirmAction } from '../../utils/alerts';
+
+export default function Sidebar({ currentUser: initialUser }) {
+    const [currentUser, setCurrentUser] = React.useState(
+        initialUser || window.currentUser || {}
+    );
+
+    const logoutFormRef = React.useRef(null);
+
+    // Ambil profil terbaru dari server saat komponen dimuat
+    React.useEffect(() => {
+        let active = true;
+
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/profile', {
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil profil.');
+                }
+
+                const data = await response.json();
+
+                if (active && data.user) {
+                    setCurrentUser(data.user);
+                    window.currentUser = {
+                        ...window.currentUser,
+                        ...data.user,
+                    };
+                }
+            } catch (error) {
+                console.error('Sidebar profile:', error);
+            }
+        }
+
+        loadProfile();
+
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    // Dengarkan perubahan profil dari halaman Settings
+    React.useEffect(() => {
+        const handleProfileUpdate = (event) => {
+            if (!event.detail) return;
+
+            setCurrentUser((previous) => ({
+                ...previous,
+                ...event.detail,
+            }));
+        };
+
+        window.addEventListener('profile:updated', handleProfileUpdate);
+
+        return () => {
+            window.removeEventListener(
+                'profile:updated',
+                handleProfileUpdate
+            );
+        };
+    }, []);
+
     const isITSupport = currentUser?.role === 'it_support';
     const isClient = currentUser?.role === 'client';
 
@@ -23,43 +90,66 @@ export default function Sidebar({ currentUser }) {
         },
         ...(isITSupport
             ? [
-                {
-                    label: 'Semua Tiket',
-                    href: '/it-support/tickets',
-                    icon: Ticket,
-                },
-                {
-                    label: 'Data Klien',
-                    href: '/it-support/clients',
-                    icon: Users,
-                },
-               {
-                    label: 'Laporan',
-                    href: '/it-support/reports',
-                    icon: ChartNoAxesColumn,
-                },
-            ]
+                  {
+                      label: 'Semua Tiket',
+                      href: '/it-support/tickets',
+                      icon: Ticket,
+                  },
+                  {
+                      label: 'Data Klien',
+                      href: '/it-support/clients',
+                      icon: Users,
+                  },
+                  {
+                      label: 'Laporan',
+                      href: '/it-support/reports',
+                      icon: ChartNoAxesColumn,
+                  },
+              ]
             : []),
         ...(isClient
             ? [
-                {
-                    label: 'Tiket Saya',
-                    href: '/client/dashboard',
-                    icon: Ticket,
-                },
-            ]
+                  {
+                      label: 'Tiket Saya',
+                      href: '/client/tickets',
+                      icon: Ticket,
+                  },
+              ]
             : []),
     ];
+
+    async function handleLogout() {
+        const confirmed = await confirmAction({
+            title: 'Keluar dari aplikasi?',
+            text: 'Apakah Anda yakin ingin mengakhiri sesi login?',
+            confirmText: 'Ya, Keluar',
+            cancelText: 'Batal',
+            icon: 'warning',
+        });
+
+        if (confirmed) {
+            logoutFormRef.current?.submit();
+        }
+    }
+
+    const settingsHref = isITSupport
+        ? '/it-support/settings'
+        : '/client/settings';
 
     return (
         <aside className="sidebar">
             <a
                 className="brand"
-                href={isITSupport ? '/it-support/dashboard' : '/client/dashboard'}
+                href={
+                    isITSupport
+                        ? '/it-support/dashboard'
+                        : '/client/dashboard'
+                }
             >
                 <span className="brand-icon">
                     <Headset size={20} />
                 </span>
+
                 <span>
                     Helpdesk<span className="brand-dot">.</span>
                 </span>
@@ -68,31 +158,36 @@ export default function Sidebar({ currentUser }) {
             <div className="nav-section">
                 <span className="nav-heading">MENU UTAMA</span>
 
-              
-            {menuItems.map((item) => {
-                const Icon = item.icon;
-                const currentPath = window.location.pathname;
-                const active = currentPath === item.href;
+                {menuItems.map((item) => {
+                    const Icon = item.icon;
+                    const active =
+                        window.location.pathname === item.href;
 
-                return (
-                    <a
-                        key={item.label}
-                        className={`nav-link${active ? ' active' : ''}`}
-                        href={item.href}
-                    >
-                        <Icon size={18} />
-                        {item.label}
-                    </a>
-                );
-            })}
-
+                    return (
+                        <a
+                            key={item.label}
+                            className={`nav-link${active ? ' active' : ''}`}
+                            href={item.href}
+                        >
+                            <Icon size={18} />
+                            {item.label}
+                        </a>
+                    );
+                })}
             </div>
 
-            {isITSupport && (
+            {(isITSupport || isClient) && (
                 <div className="nav-section settings-nav">
                     <span className="nav-heading">PREFERENSI</span>
 
-                    <a className="nav-link" href="#pengaturan">
+                    <a
+                        className={`nav-link${
+                            window.location.pathname === settingsHref
+                                ? ' active'
+                                : ''
+                        }`}
+                        href={settingsHref}
+                    >
                         <Settings size={18} />
                         Pengaturan
                     </a>
@@ -101,15 +196,33 @@ export default function Sidebar({ currentUser }) {
 
             <div className="sidebar-footer">
                 <div className="profile-avatar">
-                    {(currentUser?.name || 'U').charAt(0).toUpperCase()}
+                    {currentUser?.profile_photo ? (
+                        <img
+                            src={currentUser.profile_photo}
+                            alt="Foto Profil"
+                            onError={(event) => {
+                                event.currentTarget.style.display = 'none';
+                            }}
+                        />
+                    ) : (
+                        (currentUser?.name || 'U')
+                            .charAt(0)
+                            .toUpperCase()
+                    )}
                 </div>
 
                 <div className="profile-info">
                     <strong>{currentUser?.name || 'Pengguna'}</strong>
-                    <span>{isITSupport ? 'IT Support' : 'Klien'}</span>
+                    <span>
+                        {isITSupport ? 'IT Support' : 'Klien'}
+                    </span>
                 </div>
 
-                <form action="/logout" method="POST">
+                <form
+                    ref={logoutFormRef}
+                    action="/logout"
+                    method="POST"
+                >
                     <input
                         type="hidden"
                         name="_token"
@@ -121,10 +234,11 @@ export default function Sidebar({ currentUser }) {
                     />
 
                     <button
-                        type="submit"
+                        type="button"
                         className="logout-button"
                         title="Logout"
                         aria-label="Logout"
+                        onClick={handleLogout}
                     >
                         Keluar
                     </button>

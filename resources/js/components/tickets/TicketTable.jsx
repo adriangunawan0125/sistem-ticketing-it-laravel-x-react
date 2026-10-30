@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
     Search,
@@ -7,7 +6,20 @@ import {
     X,
     LoaderCircle,
     Save,
+    Pencil,
+    Trash2,
+    UserRound,
+    Mail,
+    Phone,
+    Building2,
+    Briefcase,
 } from 'lucide-react';
+
+import {
+    confirmAction,
+    showToast,
+    showError,
+} from '../../utils/alerts';
 
 const STATUS_OPTIONS = [
     { value: 'menunggu', label: 'Menunggu' },
@@ -37,6 +49,32 @@ function formatDate(date) {
         month: 'short',
         year: 'numeric',
     });
+}
+
+function ReporterAvatar({ user }) {
+    const [imageError, setImageError] = React.useState(false);
+
+    const initials = (user?.name || 'U')
+        .charAt(0)
+        .toUpperCase();
+
+    React.useEffect(() => {
+        setImageError(false);
+    }, [user?.profile_photo]);
+
+    return (
+        <div className="reporter-avatar">
+            {user?.profile_photo && !imageError ? (
+                <img
+                    src={user.profile_photo}
+                    alt={`Foto ${user.name || 'pelapor'}`}
+                    onError={() => setImageError(true)}
+                />
+            ) : (
+                <span>{initials}</span>
+            )}
+        </div>
+    );
 }
 
 function TicketDetailModal({
@@ -70,8 +108,7 @@ function TicketDetailModal({
                 resolution: resolution.trim() || null,
             });
 
-            setSuccess('Perubahan tiket berhasil disimpan.');
-
+            
             // Tutup modal setelah penyimpanan berhasil.
             // Data tabel akan diperbarui melalui hook useTickets.
             onClose();
@@ -118,14 +155,125 @@ function TicketDetailModal({
                     </button>
                 </div>
 
-                <div className="ticket-detail-content">
-                    {isITSupport && (
-                        <p>
-                            <strong>Klien:</strong>{' '}
-                            {ticket.user?.name ?? '-'}
-                        </p>
-                    )}
+           <div className="ticket-detail-content">
 
+    {isITSupport && (
+        <section className="reporter-profile-card">
+            <div className="reporter-profile-heading">
+                <UserRound size={18} />
+                <h3>Informasi Pelapor</h3>
+            </div>
+
+            <div className="reporter-profile-main">
+                <ReporterAvatar user={ticket.user} />
+
+                <div className="reporter-profile-name">
+                    <strong>
+                        {ticket.user?.name || 'Nama tidak tersedia'}
+                    </strong>
+
+                    <span>
+                        {ticket.user?.role === 'client'
+                            ? 'Klien'
+                            : ticket.user?.role || 'Pengguna'}
+                    </span>
+
+                    <span
+                        className={`reporter-account-status ${
+                            ticket.user?.is_active
+                                ? 'active'
+                                : 'inactive'
+                        }`}
+                    >
+                        {ticket.user?.is_active
+                            ? 'Akun Aktif'
+                            : 'Akun Tidak Aktif'}
+                    </span>
+                </div>
+            </div>
+
+            <div className="reporter-profile-details">
+
+                <div className="reporter-detail-item">
+                    <Mail size={16} />
+                    <div>
+                        <span>Email</span>
+                        <strong>
+                            {ticket.user?.email || '-'}
+                        </strong>
+                    </div>
+                </div>
+
+                <div className="reporter-detail-item">
+                    <Phone size={16} />
+                    <div>
+                        <span>Nomor Telepon</span>
+                        <strong>
+                            {ticket.user?.phone || '-'}
+                        </strong>
+                    </div>
+                </div>
+
+                <div className="reporter-detail-item">
+                    <Building2 size={16} />
+                    <div>
+                        <span>Departemen</span>
+                        <strong>
+                            {ticket.user?.department || '-'}
+                        </strong>
+                    </div>
+                </div>
+
+                <div className="reporter-detail-item">
+                    <Briefcase size={16} />
+                    <div>
+                        <span>Jabatan</span>
+                        <strong>
+                            {ticket.user?.position || '-'}
+                        </strong>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    )}
+
+    <p>
+        <strong>Kategori:</strong> {ticket.category ?? '-'}
+    </p>
+
+    <p>
+        <strong>Prioritas:</strong> {ticket.priority ?? '-'}
+    </p>
+
+    <p>
+        <strong>Status saat ini:</strong>{' '}
+        <span className={`status status-${ticket.status}`}>
+            {formatStatus(ticket.status)}
+        </span>
+    </p>
+
+    <p>
+        <strong>Tanggal:</strong>{' '}
+        {formatDate(ticket.created_at)}
+    </p>
+
+    <div>
+        <strong>Deskripsi masalah</strong>
+        <p className="ticket-description">
+            {ticket.description || '-'}
+        </p>
+    </div>
+
+    {!isITSupport && (
+        <div>
+            <strong>Catatan penyelesaian</strong>
+            <p className="ticket-description">
+                {ticket.resolution ||
+                    'Belum ada catatan dari IT Support.'}
+            </p>
+        </div>
+    )}
                     <p>
                         <strong>Kategori:</strong> {ticket.category ?? '-'}
                     </p>
@@ -276,6 +424,222 @@ function TicketDetailModal({
     );
 }
 
+
+function TicketEditModal({ ticket, onClose, onSuccess }) {
+    const [form, setForm] = React.useState({
+        title: ticket.title || '',
+        description: ticket.description || '',
+        category: ticket.category || '',
+        priority: ticket.priority || 'sedang',
+    });
+
+    const [saving, setSaving] = React.useState(false);
+    const [error, setError] = React.useState('');
+
+    function updateField(event) {
+        const { name, value } = event.target;
+
+        setForm((previous) => ({
+            ...previous,
+            [name]: value,
+        }));
+    }
+
+    async function handleSubmit(event) {
+        event.preventDefault();
+        setSaving(true);
+        setError('');
+
+        try {
+            const response = await fetch(`/api/tickets/${ticket.id}`, {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN':
+                        document.querySelector(
+                            'meta[name="csrf-token"]'
+                        )?.content || '',
+                },
+                body: JSON.stringify(form),
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                const validationError =
+                    data.errors &&
+                    Object.values(data.errors)[0]?.[0];
+
+                throw new Error(
+                    validationError ||
+                    data.message ||
+                    'Gagal memperbarui tiket.'
+                );
+            }
+
+            onClose();
+            await showToast('Tiket berhasil diperbarui.');
+            onSuccess();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return (
+        <div
+            className="modal-overlay"
+            onMouseDown={(event) => {
+                if (
+                    event.target === event.currentTarget &&
+                    !saving
+                ) {
+                    onClose();
+                }
+            }}
+        >
+            <section
+                className="ticket-modal"
+                role="dialog"
+                aria-modal="true"
+            >
+                <div className="modal-heading">
+                    <div>
+                        <span className="eyebrow">
+                            EDIT LAPORAN
+                        </span>
+                        <h2>Edit Tiket</h2>
+                        <p>{ticket.ticket_number}</p>
+                    </div>
+
+                    <button
+                        type="button"
+                        className="modal-close"
+                        onClick={onClose}
+                        disabled={saving}
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit}>
+                    <div className="form-field">
+                        <label htmlFor="edit-ticket-title">
+                            Judul Masalah
+                        </label>
+                        <input
+                            id="edit-ticket-title"
+                            name="title"
+                            value={form.title}
+                            onChange={updateField}
+                            maxLength={255}
+                            required
+                        />
+                    </div>
+
+                    <div className="form-field">
+                        <label htmlFor="edit-ticket-description">
+                            Deskripsi
+                        </label>
+                        <textarea
+                            id="edit-ticket-description"
+                            name="description"
+                            value={form.description}
+                            onChange={updateField}
+                            rows={4}
+                            maxLength={5000}
+                            required
+                        />
+                    </div>
+
+                    <div className="form-field">
+                        <label htmlFor="edit-ticket-category">
+                            Kategori
+                        </label>
+                        <select
+                            id="edit-ticket-category"
+                            name="category"
+                            value={form.category}
+                            onChange={updateField}
+                            required
+                        >
+                            <option value="Jaringan">Jaringan</option>
+                            <option value="Perangkat Keras">
+                                Perangkat Keras
+                            </option>
+                            <option value="Software">Software</option>
+                            <option value="Akun & Akses">
+                                Akun & Akses
+                            </option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+
+                    <div className="form-field">
+                        <label htmlFor="edit-ticket-priority">
+                            Prioritas
+                        </label>
+                        <select
+                            id="edit-ticket-priority"
+                            name="priority"
+                            value={form.priority}
+                            onChange={updateField}
+                            required
+                        >
+                            <option value="rendah">Rendah</option>
+                            <option value="sedang">Sedang</option>
+                            <option value="tinggi">Tinggi</option>
+                            <option value="kritis">Kritis</option>
+                        </select>
+                    </div>
+
+                    {error && (
+                        <p className="form-error" role="alert">
+                            {error}
+                        </p>
+                    )}
+
+                    <div className="modal-actions">
+                        <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={onClose}
+                            disabled={saving}
+                        >
+                            Batal
+                        </button>
+
+                        <button
+                            type="submit"
+                            className="primary-button"
+                            disabled={saving}
+                        >
+                            {saving ? (
+                                <>
+                                    <LoaderCircle
+                                        size={16}
+                                        className="animate-spin"
+                                    />
+                                    Menyimpan...
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={16} />
+                                    Simpan Perubahan
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    );
+}
+
+
 export default function TicketTable({
     tickets = [],
     loading = false,
@@ -289,6 +653,7 @@ export default function TicketTable({
     const [statusFilter, setStatusFilter] = React.useState('semua');
     const [priorityFilter, setPriorityFilter] = React.useState('semua');
     const [selectedTicket, setSelectedTicket] = React.useState(null);
+    const [editingTicket, setEditingTicket] = React.useState(null);
     const [page, setPage] = React.useState(1);
 
     const perPage = 8;
@@ -339,6 +704,45 @@ const filteredTickets = tickets.filter((ticket) => {
         setStatusFilter(value);
         setPage(1);
     }
+
+async function handleDeleteTicket(ticket) {
+    const confirmed = await confirmAction({
+        title: 'Hapus tiket?',
+        text: `Tiket ${ticket.ticket_number} akan dihapus secara permanen.`,
+        confirmText: 'Ya, hapus',
+        cancelText: 'Batal',
+    });
+
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`/api/tickets/${ticket.id}`, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'X-CSRF-TOKEN':
+                    document.querySelector(
+                        'meta[name="csrf-token"]'
+                    )?.content || '',
+            },
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(
+                data.message || 'Gagal menghapus tiket.'
+            );
+        }
+
+        await showToast('Tiket berhasil dihapus.');
+
+        window.location.reload();
+    } catch (err) {
+        showError('Gagal menghapus tiket', err.message);
+    }
+}
 
     return (
         <>
@@ -503,16 +907,43 @@ const filteredTickets = tickets.filter((ticket) => {
                                         </td>
 
                                         <td>
-                                            <button
-                                                type="button"
-                                                className="row-action"
-                                                aria-label={`Lihat detail ${ticket.ticket_number}`}
-                                                onClick={() =>
-                                                    setSelectedTicket(ticket)
-                                                }
-                                            >
-                                                <ArrowUpRight size={17} />
-                                            </button>
+                                            
+<div className="client-actions">
+    <button
+        type="button"
+        className="row-action"
+        title="Lihat detail"
+        aria-label={`Lihat detail ${ticket.ticket_number}`}
+        onClick={() => setSelectedTicket(ticket)}
+    >
+        <ArrowUpRight size={17} />
+    </button>
+
+    {!isITSupport && ticket.status === 'menunggu' && (
+        <>
+            <button
+                type="button"
+                className="row-action"
+                title="Edit tiket"
+                aria-label={`Edit ${ticket.ticket_number}`}
+                onClick={() => setEditingTicket(ticket)}
+            >
+                <Pencil size={16} />
+            </button>
+
+            <button
+                type="button"
+                className="row-action"
+                title="Hapus tiket"
+                aria-label={`Hapus ${ticket.ticket_number}`}
+                onClick={() => handleDeleteTicket(ticket)}
+            >
+                <Trash2 size={16} />
+            </button>
+        </>
+    )}
+</div>
+
                                         </td>
                                     </tr>
                                 ))}
@@ -559,6 +990,13 @@ const filteredTickets = tickets.filter((ticket) => {
                     onUpdateStatus={onUpdateStatus}
                 />
             )}
+            {editingTicket && (
+    <TicketEditModal
+        ticket={editingTicket}
+        onClose={() => setEditingTicket(null)}
+        onSuccess={() => window.location.reload()}
+    />
+)}
         </>
     );
 }

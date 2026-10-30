@@ -1,9 +1,13 @@
 
 import React from 'react';
 import {
+    confirmAction,
+    showToast,
+    showError,
+} from '../utils/alerts';
+import {
     Search,
     Plus,
-    Users,
     Pencil,
     Trash2,
     X,
@@ -69,12 +73,10 @@ export default function Clients() {
     const [loading, setLoading] = React.useState(true);
     const [saving, setSaving] = React.useState(false);
     const [error, setError] = React.useState('');
-    const [notice, setNotice] = React.useState('');
 
     const [showForm, setShowForm] = React.useState(false);
     const [editingClient, setEditingClient] = React.useState(null);
     const [form, setForm] = React.useState(emptyForm);
-
     const [formError, setFormError] = React.useState('');
 
     const isITSupport = currentUser?.role === 'it_support';
@@ -109,7 +111,6 @@ export default function Clients() {
         setEditingClient(null);
         setForm({ ...emptyForm });
         setFormError('');
-        setNotice('');
         setShowForm(true);
     }
 
@@ -123,12 +124,12 @@ export default function Clients() {
             is_active: Boolean(client.is_active),
         });
         setFormError('');
-        setNotice('');
         setShowForm(true);
     }
 
     function closeForm() {
         if (saving) return;
+
         setShowForm(false);
         setEditingClient(null);
         setFormError('');
@@ -145,9 +146,9 @@ export default function Clients() {
 
     async function handleSubmit(event) {
         event.preventDefault();
+
         setSaving(true);
         setFormError('');
-        setNotice('');
 
         try {
             const payload = {
@@ -179,7 +180,13 @@ export default function Clients() {
             setShowForm(false);
             setEditingClient(null);
             setForm({ ...emptyForm });
-            setNotice(result.message || 'Data klien berhasil disimpan.');
+
+            showToast(
+                result.message ||
+                (editingClient
+                    ? 'Data klien berhasil diperbarui.'
+                    : 'Klien berhasil ditambahkan.')
+            );
 
             await loadClients();
         } catch (err) {
@@ -192,14 +199,19 @@ export default function Clients() {
     async function toggleActive(client) {
         const nextActive = !Boolean(client.is_active);
 
-        const confirmed = window.confirm(
-            `${nextActive ? 'Aktifkan' : 'Nonaktifkan'} akun ${client.name}?`
-        );
+        const confirmed = await confirmAction({
+            title: nextActive
+                ? 'Aktifkan akun klien?'
+                : 'Nonaktifkan akun klien?',
+            text: `Akun ${client.name} akan ${
+                nextActive ? 'diaktifkan' : 'dinonaktifkan'
+            }.`,
+            confirmText: nextActive
+                ? 'Ya, aktifkan'
+                : 'Ya, nonaktifkan',
+        });
 
         if (!confirmed) return;
-
-        setError('');
-        setNotice('');
 
         try {
             const result = await apiRequest(
@@ -208,22 +220,25 @@ export default function Clients() {
                 { is_active: nextActive }
             );
 
-            setNotice(result.message || 'Status akun berhasil diperbarui.');
+            showToast(
+                result.message || 'Status akun berhasil diperbarui.'
+            );
+
             await loadClients();
         } catch (err) {
-            setError(err.message || 'Gagal mengubah status akun.');
+            showError('Gagal mengubah status akun', err.message);
         }
     }
 
     async function deleteClient(client) {
-        const confirmed = window.confirm(
-            `Hapus akun ${client.name} (${client.email})? Tindakan ini tidak dapat dibatalkan.`
-        );
+        const confirmed = await confirmAction({
+            title: 'Hapus akun klien?',
+            text: `Akun ${client.name} (${client.email}) akan dihapus. Tindakan ini tidak dapat dibatalkan.`,
+            confirmText: 'Ya, hapus',
+            cancelText: 'Batal',
+        });
 
         if (!confirmed) return;
-
-        setError('');
-        setNotice('');
 
         try {
             const result = await apiRequest(
@@ -231,7 +246,7 @@ export default function Clients() {
                 'DELETE'
             );
 
-            setNotice(result.message || 'Akun klien berhasil dihapus.');
+            showToast(result.message || 'Akun klien berhasil dihapus.');
 
             if (clients.length === 1 && page > 1) {
                 setPage((previous) => previous - 1);
@@ -239,7 +254,7 @@ export default function Clients() {
                 await loadClients();
             }
         } catch (err) {
-            setError(err.message || 'Gagal menghapus akun klien.');
+            showError('Gagal menghapus klien', err.message);
         }
     }
 
@@ -247,8 +262,10 @@ export default function Clients() {
         return (
             <div className="app-shell">
                 <Sidebar currentUser={currentUser} />
+
                 <main className="main-area">
                     <Topbar />
+
                     <div className="page-content">
                         <section className="content-card">
                             <h2>Akses ditolak</h2>
@@ -324,12 +341,6 @@ export default function Clients() {
                                 />
                             </div>
                         </div>
-
-                        {notice && (
-                            <p className="form-success" role="status">
-                                {notice}
-                            </p>
-                        )}
 
                         {error && (
                             <p className="form-error" role="alert">

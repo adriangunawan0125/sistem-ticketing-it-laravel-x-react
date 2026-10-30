@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-
+import { showToast } from '../utils/alerts';
 const EMPTY_STATS = { total: 0, menunggu: 0, diproses: 0, selesai: 0 };
 
 async function readJson(response) {
@@ -82,6 +82,7 @@ export function useTickets(refreshInterval = 8000) {
         });
         const result = await readJson(response);
         await refresh();
+        showToast('Tiket berhasil dibuat.');
         return result;
     }, [refresh]);
 
@@ -99,6 +100,7 @@ export function useTickets(refreshInterval = 8000) {
         });
         const result = await readJson(response);
         await refresh();
+        showToast('Status tiket berhasil diperbarui.');
         return result;
     }, [refresh]);
 

@@ -33,4 +33,5 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketStatusHistory::class);
     }
+    
 }

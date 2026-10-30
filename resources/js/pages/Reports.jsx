@@ -1,12 +1,26 @@
 
 import React from 'react';
-import { FileDown, FileSpreadsheet, Search, RefreshCw } from 'lucide-react';
+import {
+    FileDown,
+    FileSpreadsheet,
+    Search,
+    RefreshCw,
+} from 'lucide-react';
+
 import Sidebar from '../components/layout/Sidebar';
 import Topbar from '../components/layout/Topbar';
 
+import {
+    confirmAction,
+    showToast,
+    showError,
+} from '../utils/alerts';
+
 async function getReport(url) {
     const response = await fetch(url, {
-        headers: { Accept: 'application/json' },
+        headers: {
+            Accept: 'application/json',
+        },
         credentials: 'same-origin',
     });
 
@@ -49,59 +63,125 @@ export default function Reports() {
         const params = new URLSearchParams();
 
         Object.entries(filters).forEach(([key, value]) => {
-            if (value) params.set(key, value);
+            if (value) {
+                params.set(key, value);
+            }
         });
 
         return params.toString();
     }
 
-    async function loadReport(event) {
+    async function loadReport(event, notify = false) {
         event?.preventDefault();
+
         setLoading(true);
         setError('');
 
         try {
             const query = queryString();
+
             const data = await getReport(
                 `/api/reports/tickets${query ? `?${query}` : ''}`
             );
 
             setReport(data);
+
+            if (notify) {
+                showToast('Data laporan berhasil diperbarui.');
+            }
         } catch (err) {
             setError(err.message || 'Gagal memuat laporan.');
+            showError('Gagal memuat laporan', err.message);
         } finally {
             setLoading(false);
         }
     }
 
-    
-function resetFilters() {
-    const emptyFilters = {
-        date_from: '',
-        date_to: '',
-        status: '',
-        priority: '',
-    };
+    async function resetFilters() {
+        const emptyFilters = {
+            date_from: '',
+            date_to: '',
+            status: '',
+            priority: '',
+        };
 
-    setFilters(emptyFilters);
-    setLoading(true);
-    setError('');
+        setFilters(emptyFilters);
+        setLoading(true);
+        setError('');
 
-    getReport('/api/reports/tickets')
-        .then(setReport)
-        .catch((err) => {
+        try {
+            const data = await getReport('/api/reports/tickets');
+
+            setReport(data);
+
+            showToast('Filter laporan berhasil direset.');
+        } catch (err) {
             setError(err.message || 'Gagal memuat laporan.');
-        })
-        .finally(() => setLoading(false));
-}
+            showError('Gagal memuat laporan', err.message);
+        } finally {
+            setLoading(false);
+        }
+    }
 
+    async function downloadReport(format) {
+        const confirmed = await confirmAction({
+            title: `Export laporan ${format.toUpperCase()}?`,
+            text: 'File laporan akan diunduh berdasarkan filter yang dipilih.',
+            confirmText: 'Ya, export',
+            cancelText: 'Batal',
+            icon: 'question',
+        });
 
-    function downloadReport(format) {
-        const query = queryString();
-        const suffix = format === 'pdf' ? 'pdf' : 'csv';
+        if (!confirmed) return;
 
-        window.location.href =
-            `/api/reports/tickets.${suffix}${query ? `?${query}` : ''}`;
+        try {
+            const query = queryString();
+            const suffix = format === 'pdf' ? 'pdf' : 'csv';
+
+            const url =
+                `/api/reports/tickets.${suffix}` +
+                `${query ? `?${query}` : ''}`;
+
+            const response = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    Accept:
+                        format === 'pdf'
+                            ? 'application/pdf'
+                            : 'text/csv',
+                },
+            });
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+
+                throw new Error(
+                    data.message || 'Gagal mengunduh laporan.'
+                );
+            }
+
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+
+            link.href = objectUrl;
+            link.download = `laporan-tiket.${suffix}`;
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            setTimeout(() => {
+                URL.revokeObjectURL(objectUrl);
+            }, 1000);
+
+            showToast(
+                `Laporan ${format.toUpperCase()} berhasil diunduh.`
+            );
+        } catch (err) {
+            showError('Export gagal', err.message);
+        }
     }
 
     React.useEffect(() => {
@@ -112,8 +192,10 @@ function resetFilters() {
         return (
             <div className="app-shell">
                 <Sidebar currentUser={currentUser} />
+
                 <main className="main-area">
                     <Topbar />
+
                     <div className="page-content">
                         <section className="content-card">
                             <h2>Akses ditolak</h2>
@@ -126,11 +208,26 @@ function resetFilters() {
     }
 
     const summaryCards = [
-        { label: 'Total Tiket', value: report.summary.total },
-        { label: 'Menunggu', value: report.summary.menunggu },
-        { label: 'Diproses', value: report.summary.diproses },
-        { label: 'Selesai', value: report.summary.selesai },
-        { label: 'Ditutup', value: report.summary.ditutup },
+        {
+            label: 'Total Tiket',
+            value: report.summary.total,
+        },
+        {
+            label: 'Menunggu',
+            value: report.summary.menunggu,
+        },
+        {
+            label: 'Diproses',
+            value: report.summary.diproses,
+        },
+        {
+            label: 'Selesai',
+            value: report.summary.selesai,
+        },
+        {
+            label: 'Ditutup',
+            value: report.summary.ditutup,
+        },
     ];
 
     return (
@@ -146,9 +243,12 @@ function resetFilters() {
                             <span className="eyebrow">
                                 IT SUPPORT WORKSPACE
                             </span>
+
                             <h1>Laporan Tiket</h1>
+
                             <p>
-                                Filter dan unduh rekap laporan dalam format PDF atau CSV.
+                                Filter dan unduh rekap laporan dalam format
+                                PDF atau CSV.
                             </p>
                         </div>
                     </section>
@@ -157,18 +257,22 @@ function resetFilters() {
                         <div className="card-heading">
                             <div>
                                 <h2>Filter Laporan</h2>
+
                                 <p>
                                     Pilih periode, status, dan prioritas tiket.
                                 </p>
                             </div>
                         </div>
 
-                        <form onSubmit={loadReport}>
+                        <form
+                            onSubmit={(event) => loadReport(event, true)}
+                        >
                             <div className="report-filters">
                                 <div className="form-field">
                                     <label htmlFor="report-date-from">
                                         Dari tanggal
                                     </label>
+
                                     <input
                                         id="report-date-from"
                                         type="date"
@@ -187,6 +291,7 @@ function resetFilters() {
                                     <label htmlFor="report-date-to">
                                         Sampai tanggal
                                     </label>
+
                                     <input
                                         id="report-date-to"
                                         type="date"
@@ -205,6 +310,7 @@ function resetFilters() {
                                     <label htmlFor="report-status">
                                         Status
                                     </label>
+
                                     <select
                                         id="report-status"
                                         value={filters.status}
@@ -216,13 +322,21 @@ function resetFilters() {
                                         }
                                     >
                                         <option value="">Semua Status</option>
-                                        <option value="menunggu">Menunggu</option>
-                                        <option value="diproses">Diproses</option>
+                                        <option value="menunggu">
+                                            Menunggu
+                                        </option>
+                                        <option value="diproses">
+                                            Diproses
+                                        </option>
                                         <option value="menunggu_respons_user">
                                             Menunggu Respons Klien
                                         </option>
-                                        <option value="selesai">Selesai</option>
-                                        <option value="ditutup">Ditutup</option>
+                                        <option value="selesai">
+                                            Selesai
+                                        </option>
+                                        <option value="ditutup">
+                                            Ditutup
+                                        </option>
                                     </select>
                                 </div>
 
@@ -230,6 +344,7 @@ function resetFilters() {
                                     <label htmlFor="report-priority">
                                         Prioritas
                                     </label>
+
                                     <select
                                         id="report-priority"
                                         value={filters.priority}
@@ -240,7 +355,9 @@ function resetFilters() {
                                             }))
                                         }
                                     >
-                                        <option value="">Semua Prioritas</option>
+                                        <option value="">
+                                            Semua Prioritas
+                                        </option>
                                         <option value="rendah">Rendah</option>
                                         <option value="sedang">Sedang</option>
                                         <option value="tinggi">Tinggi</option>
@@ -256,22 +373,19 @@ function resetFilters() {
                                     disabled={loading}
                                 >
                                     <Search size={16} />
-                                    {loading ? 'Memuat...' : 'Terapkan Filter'}
+
+                                    {loading
+                                        ? 'Memuat...'
+                                        : 'Terapkan Filter'}
                                 </button>
 
                                 <button
                                     type="button"
                                     className="secondary-button"
-                                    onClick={() => {
-                                        setFilters({
-                                            date_from: '',
-                                            date_to: '',
-                                            status: '',
-                                            priority: '',
-                                        });
-                                        setTimeout(() => loadReport(), 0);
-                                    }}
+                                    onClick={resetFilters}
+                                    disabled={loading}
                                 >
+                                    <RefreshCw size={15} />
                                     Reset
                                 </button>
                             </div>
@@ -279,15 +393,21 @@ function resetFilters() {
                     </section>
 
                     {error && (
-                        <p className="form-error" role="alert">{error}</p>
+                        <p className="form-error" role="alert">
+                            {error}
+                        </p>
                     )}
 
                     <div className="report-summary-grid">
                         {summaryCards.map((item) => (
-                            <section className="content-card" key={item.label}>
+                            <section
+                                className="content-card"
+                                key={item.label}
+                            >
                                 <span className="report-summary-label">
                                     {item.label}
                                 </span>
+
                                 <strong className="report-summary-value">
                                     {item.value}
                                 </strong>
@@ -299,6 +419,7 @@ function resetFilters() {
                         <div className="card-heading">
                             <div>
                                 <h2>Data Laporan</h2>
+
                                 <p>
                                     {report.tickets.length} tiket sesuai filter.
                                 </p>
@@ -309,6 +430,7 @@ function resetFilters() {
                                     type="button"
                                     className="secondary-button"
                                     onClick={() => downloadReport('csv')}
+                                    disabled={loading}
                                 >
                                     <FileSpreadsheet size={16} />
                                     Export CSV
@@ -318,6 +440,7 @@ function resetFilters() {
                                     type="button"
                                     className="primary-button"
                                     onClick={() => downloadReport('pdf')}
+                                    disabled={loading}
                                 >
                                     <FileDown size={16} />
                                     Export PDF
@@ -348,18 +471,32 @@ function resetFilters() {
                                     ) : (
                                         report.tickets.map((ticket) => (
                                             <tr key={ticket.id}>
-                                                <td>{ticket.ticket_number}</td>
-                                                <td>{ticket.title}</td>
-                                                <td>{ticket.user?.name ?? '-'}</td>
-                                                <td>{ticket.priority}</td>
                                                 <td>
-                                                    {ticket.status.replaceAll('_', ' ')}
+                                                    {ticket.ticket_number}
                                                 </td>
+
+                                                <td>{ticket.title}</td>
+
+                                                <td>
+                                                    {ticket.user?.name ?? '-'}
+                                                </td>
+
+                                                <td>{ticket.priority}</td>
+
+                                                <td>
+                                                    {ticket.status.replaceAll(
+                                                        '_',
+                                                        ' '
+                                                    )}
+                                                </td>
+
                                                 <td>
                                                     {ticket.created_at
                                                         ? new Date(
                                                               ticket.created_at
-                                                          ).toLocaleDateString('id-ID')
+                                                          ).toLocaleDateString(
+                                                              'id-ID'
+                                                          )
                                                         : '-'}
                                                 </td>
                                             </tr>
